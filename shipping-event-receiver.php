@@ -16,6 +16,11 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Prevent duplicate class declaration
+if (class_exists('Shipping_Event_Receiver')) {
+    return;
+}
+
 class Shipping_Event_Receiver {
     
     private $log_table = 'shipping_event_logs';
