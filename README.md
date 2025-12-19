@@ -1,7 +1,7 @@
 === Commerce Control Suite ===
 Contributors: kazeemquadri
 Tags: woocommerce, order control, payment gateway, shipping, webhooks
-Requires at least: 5.0
+Requires at least: 6.2
 Tested up to: 6.9
 Stable tag: 1.2.7
 License: GPLv2 or later
