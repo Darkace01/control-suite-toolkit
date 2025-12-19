@@ -11,7 +11,6 @@ if (!defined('ABSPATH')) {
 class CommerceControlSuiteOrderControl {
     
     private $optionName = 'ser_order_control_settings';
-    const DEFAULT_DISABLED_MESSAGE = 'Orders are currently disabled. Please try again later.';
     
     public function __construct() {
         add_action('woocommerce_after_checkout_validation', array($this, 'validateOrderSubmission'), 10, 2);
@@ -138,7 +137,7 @@ class CommerceControlSuiteOrderControl {
         if (!$this->areOrdersEnabled()) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __(self::DEFAULT_DISABLED_MESSAGE, 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
             
             wc_add_notice(esc_html($message), 'error');
         }
@@ -154,7 +153,7 @@ class CommerceControlSuiteOrderControl {
         if (!$this->areOrdersEnabled()) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __(self::DEFAULT_DISABLED_MESSAGE, 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
             
             $errors->add('orders_disabled', esc_html($message));
         }
@@ -183,7 +182,7 @@ class CommerceControlSuiteOrderControl {
         if (!$this->canOrderProduct($product->get_id())) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __(self::DEFAULT_DISABLED_MESSAGE, 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
             
             echo '<div class="woocommerce-info" style="margin: 20px 0;">' . esc_html($message) . '</div>';
         }
@@ -220,7 +219,7 @@ class CommerceControlSuiteOrderControl {
             'restricted_categories' => array(),
             'restricted_products' => array(),
             'redirect_url' => '',
-            'disabled_message' => __(self::DEFAULT_DISABLED_MESSAGE, 'commerce-control-suite')
+            'disabled_message' => __('Orders are currently disabled. Please try again later.', 'commerce-control-suite')
         ));
     }
     
