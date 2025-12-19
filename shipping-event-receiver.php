@@ -712,7 +712,7 @@ class CommerceControlSuite {
         }
         
         // Handle form submission
-        if ( isset( $_POST['ser_order_control_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ser_order_control_nonce'] ) ), 'ser_order_control_save' ) ) {
+        if ( isset( $_POST['ser_order_control_nonce'] ) ) {
             $this->handleOrderControlSubmission();
         }
         
@@ -903,7 +903,9 @@ class CommerceControlSuite {
      * Handle Order Control form submission
      */
     private function handleOrderControlSubmission() {
-        // Nonce already verified in renderOrderControlPage()
+        if ( ! isset( $_POST['ser_order_control_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ser_order_control_nonce'] ) ), 'ser_order_control_save' ) ) {
+            return;
+        }
 
         $settings = array(
             'enable_orders'         => isset( $_POST['enable_orders'] ),
@@ -933,17 +935,17 @@ class CommerceControlSuite {
         }
         
         // Handle delete action
-        if ( isset( $_GET['action'] ) && 'delete' === $_GET['action'] && isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'delete_rule' ) ) {
+        if ( isset( $_GET['action'] ) && 'delete' === $_GET['action'] ) {
             $this->handlePaymentGatewayRuleDeletion();
         }
         
         // Handle toggle enabled/disabled
-        if ( isset( $_GET['action'] ) && 'toggle' === $_GET['action'] && isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'toggle_rule' ) ) {
+        if ( isset( $_GET['action'] ) && 'toggle' === $_GET['action'] ) {
             $this->handlePaymentGatewayRuleToggle();
         }
         
         // Handle add/edit rule submission
-        if ( isset( $_POST['ser_payment_gateway_rule_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ser_payment_gateway_rule_nonce'] ) ), 'ser_payment_gateway_rule_save' ) ) {
+        if ( isset( $_POST['ser_payment_gateway_rule_nonce'] ) ) {
             $this->handlePaymentGatewayRuleSubmission();
         }
         
@@ -1114,10 +1116,12 @@ class CommerceControlSuite {
      * Handle payment gateway rule deletion
      */
     private function handlePaymentGatewayRuleDeletion() {
-        // Nonce already verified in render_payment_gateway_page()
+        if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'delete_rule' ) ) {
+            return;
+        }
 
         $settings = $this->paymentGatewayControl->getSettings();
-        $rule_id  = intval( $_GET['rule_id'] );
+        $rule_id  = isset( $_GET['rule_id'] ) ? intval( $_GET['rule_id'] ) : -1;
         if ( isset( $settings['rules'][ $rule_id ] ) ) {
             unset( $settings['rules'][ $rule_id ] );
             $settings['rules'] = array_values( $settings['rules'] ); // Reindex array
@@ -1130,10 +1134,12 @@ class CommerceControlSuite {
      * Handle payment gateway rule toggle
      */
     private function handlePaymentGatewayRuleToggle() {
-        // Nonce already verified in render_payment_gateway_page()
+        if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'toggle_rule' ) ) {
+            return;
+        }
 
         $settings = $this->paymentGatewayControl->getSettings();
-        $rule_id  = intval( $_GET['rule_id'] );
+        $rule_id  = isset( $_GET['rule_id'] ) ? intval( $_GET['rule_id'] ) : -1;
         if ( isset( $settings['rules'][ $rule_id ] ) ) {
             $settings['rules'][ $rule_id ]['enabled'] = ! isset( $settings['rules'][ $rule_id ]['enabled'] ) || $settings['rules'][ $rule_id ]['enabled'] ? false : true;
             $this->paymentGatewayControl->updateSettings( $settings );
@@ -1145,7 +1151,9 @@ class CommerceControlSuite {
      * Handle payment gateway rule form submission
      */
     private function handlePaymentGatewayRuleSubmission() {
-        // Nonce already verified in render_payment_gateway_page()
+        if ( ! isset( $_POST['ser_payment_gateway_rule_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['ser_payment_gateway_rule_nonce'] ) ), 'ser_payment_gateway_rule_save' ) ) {
+            return;
+        }
 
         $settings = $this->paymentGatewayControl->getSettings();
 
