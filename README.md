@@ -1,6 +1,6 @@
 # WooCommerce Control Suite
 
-**Version:** 1.2.1  
+**Version:** 1.2.7  
 **Requires at least:** WordPress 5.0, WooCommerce 3.0  
 **Tested up to:** WordPress 6.4, WooCommerce 8.0  
 **License:** GPL v2 or later  
@@ -13,6 +13,7 @@ WooCommerce Control Suite is a comprehensive WordPress plugin that gives you com
 ## Features
 
 ### 📦 Order Control
+
 - **Enable/Disable Orders** - Turn order placement on or off globally
 - **Time Restrictions** - Allow orders only during specific times of day
 - **Date/Time Range** - Set specific date and time ranges for order availability
@@ -25,6 +26,7 @@ WooCommerce Control Suite is a comprehensive WordPress plugin that gives you com
 - **Redirect URLs** - Redirect customers attempting checkout when orders are disabled
 
 ### 💳 Payment Gateway Control
+
 - **Currency-Based Rules** - Control which payment gateways appear for specific currencies
 - **Table View Management** - Easy-to-use table interface for managing rules
 - **Add/Edit/Delete Rules** - Full CRUD operations for payment rules
@@ -33,6 +35,7 @@ WooCommerce Control Suite is a comprehensive WordPress plugin that gives you com
 - **Multi-Gateway Support** - Select multiple payment gateways per rule
 
 ### 🔗 Shipping Event Webhooks
+
 - **REST API Endpoint** - Receive event notifications from shipping platforms
 - **Comprehensive Logging** - All requests logged to database
 - **Detailed Log Viewer** - View request body, parameters, headers, and responses
@@ -40,6 +43,7 @@ WooCommerce Control Suite is a comprehensive WordPress plugin that gives you com
 - **WooCommerce Integration** - Updates order meta and adds order notes
 
 ### 📊 Dashboard
+
 - **Overview Statistics** - Quick view of all plugin features
 - **Recent Activity** - View recent webhook events
 - **Status Indicators** - Visual indicators for enabled/disabled features
@@ -112,19 +116,29 @@ Yes, you can create as many rules as needed. Rules can be enabled/disabled indiv
 ### Is the webhook endpoint secure?
 
 You can implement additional security by:
+
 - Using HTTPS
 - Validating request headers
 - IP whitelisting (custom implementation)
 
 ## Changelog
 
+### 1.2.7
+
+- Fixed "Trying to access array offset on null" warning on fresh installations.
+- Added strict dependency check for WooCommerce to prevent fatal errors.
+- Improved plugin initialization with admin notices for missing dependencies.
+- Synchronized version constants across the plugin.
+
 ### 1.2.1
+
 - Renamed plugin to "WooCommerce Control Suite"
 - Updated text domain to `wc-control-suite`
 - Added dashicons to admin pages
 - Improved UI/UX with visual indicators
 
 ### 1.2.0
+
 - Added advanced order control features
 - Implemented hide add to cart functionality
 - Added date/time range restrictions
@@ -132,18 +146,22 @@ You can implement additional security by:
 - Added redirect URL feature
 
 ### 1.1.2
+
 - Fixed syntax error in payment gateway control
 
 ### 1.1.1
+
 - Implemented table view for payment gateway rules
 - Added edit/delete/enable/disable functionality
 - Added rule names and status indicators
 
 ### 1.1.0
+
 - Added dashboard with statistics
 - Restructured menu navigation
 
 ### 1.0.x
+
 - Initial releases with basic features
 
 ## Support

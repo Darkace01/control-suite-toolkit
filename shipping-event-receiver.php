@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: WooCommerce Control Suite
- * Plugin URI: https://example.com/woocommerce-control-suite
+ * Plugin URI: https://github.com/Darkace01/wooCommerce-control-suite
  * Description: Complete control suite for WooCommerce - manage order restrictions, payment gateway rules, and shipping event webhooks
  * Version: 1.2.7
  * Author: Kazeem Quadri
- * Author URI: https://example.com
+ * Author URI: https://github.com/Darkace01
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wc-control-suite
