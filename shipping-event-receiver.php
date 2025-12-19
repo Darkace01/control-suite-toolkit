@@ -13,6 +13,7 @@
  * Requires PHP: 7.2
  * WC requires at least: 3.0
  * WC tested up to: 8.0
+ * Tested up to: 6.9
  */
 
 // Prevent direct access
@@ -187,14 +188,14 @@ class Shipping_Event_Receiver {
             'shipping_event_general',
             'General Settings',
             array($this, 'render_section_info'),
-            'shipping-event-receiver'
+            'commerce-control-suite'
         );
         
         add_settings_field(
             'endpoint_slug',
             'Endpoint Slug',
             array($this, 'render_endpoint_field'),
-            'shipping-event-receiver',
+            'commerce-control-suite',
             'shipping_event_general'
         );
     }
@@ -367,7 +368,7 @@ class Shipping_Event_Receiver {
             <form method="post" action="options.php">
                 <?php
                 settings_fields($this->option_name);
-                do_settings_sections('shipping-event-receiver');
+                do_settings_sections('commerce-control-suite');
                 submit_button('Save Settings');
                 ?>
             </form>
