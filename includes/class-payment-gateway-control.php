@@ -8,30 +8,30 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class Commerce_Control_Suite_Payment_Gateway_Control {
+class CommerceControlSuitePaymentGatewayControl {
     
-    private $option_name = 'ser_payment_gateway_settings';
+    private $optionName = 'ser_payment_gateway_settings';
     
     public function __construct() {
-        add_filter('woocommerce_available_payment_gateways', array($this, 'filter_gateways_by_currency'), 999);
+        add_filter('woocommerce_available_payment_gateways', array($this, 'filterGatewaysByCurrency'), 999);
     }
     
     /**
      * Filter payment gateways based on currency settings
      */
-    public function filter_gateways_by_currency($available_gateways) {
+    public function filterGatewaysByCurrency($availableGateways) {
         if (is_admin()) {
-            return $available_gateways;
+            return $availableGateways;
         }
         
-        $settings = $this->get_settings();
-        $current_currency = get_woocommerce_currency();
+        $settings = $this->getSettings();
+        $currentCurrency = get_woocommerce_currency();
         
         if (empty($settings['rules']) || !is_array($settings['rules'])) {
-            return $available_gateways;
+            return $availableGateways;
         }
         
-        $allowed_gateways = array();
+        $allowedGateways = array();
         
         // Check which gateways are allowed for current currency
         foreach ($settings['rules'] as $rule) {
@@ -40,34 +40,34 @@ class Commerce_Control_Suite_Payment_Gateway_Control {
                 continue;
             }
             
-            $rule_currencies = isset($rule['currencies']) ? $rule['currencies'] : (isset($rule['currency']) ? array($rule['currency']) : array());
+            $ruleCurrencies = isset($rule['currencies']) ? $rule['currencies'] : (isset($rule['currency']) ? array($rule['currency']) : array());
             
-            if (in_array($current_currency, $rule_currencies)) {
+            if (in_array($currentCurrency, $ruleCurrencies)) {
                 if (isset($rule['gateways']) && is_array($rule['gateways'])) {
-                    $allowed_gateways = array_merge($allowed_gateways, $rule['gateways']);
+                    $allowedGateways = array_merge($allowedGateways, $rule['gateways']);
                 }
             }
         }
         
         // If no specific rules for this currency, return all gateways
-        if (empty($allowed_gateways)) {
-            return $available_gateways;
+        if (empty($allowedGateways)) {
+            return $availableGateways;
         }
         
         // Filter gateways
-        foreach ($available_gateways as $gateway_id => $gateway) {
-            if (!in_array($gateway_id, $allowed_gateways)) {
-                unset($available_gateways[$gateway_id]);
+        foreach ($availableGateways as $gatewayId => $gateway) {
+            if (!in_array($gatewayId, $allowedGateways)) {
+                unset($availableGateways[$gatewayId]);
             }
         }
         
-        return $available_gateways;
+        return $availableGateways;
     }
     
     /**
      * Get all available payment gateways
      */
-    public function get_available_gateways() {
+    public function getAvailableGateways() {
         $gateways = WC()->payment_gateways->payment_gateways();
         $result = array();
         
@@ -81,15 +81,15 @@ class Commerce_Control_Suite_Payment_Gateway_Control {
     /**
      * Get active currencies
      */
-    public function get_active_currencies() {
+    public function getActiveCurrencies() {
         $currencies = get_woocommerce_currencies();
         $active = array(get_woocommerce_currency() => $currencies[get_woocommerce_currency()]);
         
         // Check for multi-currency plugin support
         if (class_exists('WOOCS')) {
             global $WOOCS;
-            $woocs_currencies = $WOOCS->get_currencies();
-            foreach ($woocs_currencies as $currency) {
+            $woocsCurrencies = $WOOCS->get_currencies();
+            foreach ($woocsCurrencies as $currency) {
                 if (isset($currencies[$currency['name']])) {
                     $active[$currency['name']] = $currencies[$currency['name']];
                 }
@@ -99,31 +99,28 @@ class Commerce_Control_Suite_Payment_Gateway_Control {
         return $active;
     }
     
-    /**
-     * Get settings
-     */
-    public function get_settings() {
-        return get_option($this->option_name, array('rules' => array()));
+    public function getSettings() {
+        return get_option($this->optionName, array('rules' => array()));
     }
     
     /**
      * Update settings
      */
-    public function update_settings($settings) {
-        return update_option($this->option_name, $settings);
+    public function updateSettings($settings) {
+        return update_option($this->optionName, $settings);
     }
     
     /**
      * Get statistics for dashboard
      */
-    public function get_statistics() {
-        $settings = $this->get_settings();
-        $rules_count = isset($settings['rules']) ? count($settings['rules']) : 0;
+    public function getStatistics() {
+        $settings = $this->getSettings();
+        $rulesCount = isset($settings['rules']) ? count($settings['rules']) : 0;
         
         return array(
-            'total_rules' => $rules_count,
-            'active_currencies' => count($this->get_active_currencies()),
-            'available_gateways' => count($this->get_available_gateways())
+            'total_rules' => $rulesCount,
+            'active_currencies' => count($this->getActiveCurrencies()),
+            'available_gateways' => count($this->getAvailableGateways())
         );
     }
 }

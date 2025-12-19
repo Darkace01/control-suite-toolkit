@@ -9,7 +9,7 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: commerce-control-suite
- * Requires at least: 5.0
+ * Requires at least: 6.2
  * Requires PHP: 7.2
  * WC requires at least: 3.0
  * WC tested up to: 8.0
@@ -38,86 +38,83 @@ if (!defined('COMMERCE_CONTROL_SUITE_PLUGIN_URL')) {
 }
 
 // Prevent duplicate class declaration
-if (!class_exists('Commerce_Control_Suite')) {
-
-/**
- * Main Plugin Class
- */
-class Commerce_Control_Suite {
+class CommerceControlSuite {
     
-    private $log_table = 'shipping_event_logs';
-    private $option_name = 'shipping_event_receiver_settings';
-    private $plugin_file;
-    private $order_control;
-    private $payment_gateway_control;
+    const PAGE_DASHBOARD = 'commerce-control-suite';
+    const PAGE_LOGS = 'commerce-event-logs';
+    const PAGE_ORDER_CONTROL = 'commerce-order-control';
+    const PAGE_PAYMENT_GATEWAY = 'commerce-payment-gateway';
+    
+    const LABEL_ORDER_CONTROL = 'Order Control';
+    const LABEL_PAYMENT_GATEWAY = 'Payment Gateway';
+    
+    private $logTable = 'shipping_event_logs';
+    private $optionName = 'shipping_event_receiver_settings';
+    private $pluginFile;
+    private $orderControl;
+    private $paymentGatewayControl;
     
     public function __construct() {
-        $this->plugin_file = COMMERCE_CONTROL_SUITE_FILE;
+        $this->pluginFile = COMMERCE_CONTROL_SUITE_FILE;
         
         // Load dependencies
-        $this->load_dependencies();
+        $this->loadDependencies();
         
         // Initialize sub-modules
-        $this->order_control = new Commerce_Control_Suite_Order_Control();
-        $this->payment_gateway_control = new Commerce_Control_Suite_Payment_Gateway_Control();
+        $this->orderControl = new CommerceControlSuiteOrderControl();
+        $this->paymentGatewayControl = new CommerceControlSuitePaymentGatewayControl();
         
         // Register REST API endpoint
-        add_action('rest_api_init', array($this, 'register_endpoint'));
+        add_action('rest_api_init', array($this, 'registerEndpoint'));
         
         // Create database table on plugin activation
-        register_activation_hook($this->plugin_file, array($this, 'create_log_table'));
+        register_activation_hook($this->pluginFile, array($this, 'createLogTable'));
         
         // Check and create table if it doesn't exist (fallback)
-        add_action('admin_init', array($this, 'check_database_table'));
+        add_action('admin_init', array($this, 'checkDatabaseTable'));
         
         // Add admin menu
-        add_action('admin_menu', array($this, 'add_admin_menu'));
-        add_action('admin_init', array($this, 'register_settings'));
+        add_action('admin_menu', array($this, 'addAdminMenu'));
+        add_action('admin_init', array($this, 'registerSettings'));
         
         // Add settings link on plugins page
-        add_filter('plugin_action_links_' . plugin_basename($this->plugin_file), array($this, 'add_settings_link'));
+        add_filter('plugin_action_links_' . plugin_basename($this->pluginFile), array($this, 'addSettingsLink'));
         
         // Register AJAX handlers
-        add_action('wp_ajax_get_log_details', array($this, 'ajax_get_log_details'));
+        add_action('wp_ajax_get_log_details', array($this, 'ajaxGetLogDetails'));
     }
     
-    /**
-     * Load plugin dependencies
-     */
-    private function load_dependencies() {
-        require_once plugin_dir_path($this->plugin_file) . 'includes/class-order-control.php';
-        require_once plugin_dir_path($this->plugin_file) . 'includes/class-payment-gateway-control.php';
+    private function loadDependencies() {
+        require_once plugin_dir_path($this->pluginFile) . 'includes/class-order-control.php';
+        require_once plugin_dir_path($this->pluginFile) . 'includes/class-payment-gateway-control.php';
     }
     
     /**
      * Handle old page slug redirects for backward compatibility
      */
-    public function handle_old_page_slug() {
+    public function handleOldPageSlug() {
         if (is_admin() && isset($_GET['page'])) {
-            $old_to_new = array(
-                'shipping-event-receiver' => 'commerce-control-suite',
-                'shipping-event-logs' => 'commerce-event-logs',
-                'shipping-order-control' => 'commerce-order-control',
-                'shipping-payment-gateway' => 'commerce-payment-gateway'
+            $oldToNew = array(
+                'shipping-event-receiver' => self::PAGE_DASHBOARD,
+                'shipping-event-logs' => self::PAGE_LOGS,
+                'shipping-order-control' => self::PAGE_ORDER_CONTROL,
+                'shipping-payment-gateway' => self::PAGE_PAYMENT_GATEWAY
             );
             
-            $current_page = sanitize_text_field($_GET['page']);
+            $currentPage = sanitize_text_field($_GET['page']);
             
-            if (isset($old_to_new[$current_page])) {
-                $new_page = $old_to_new[$current_page];
-                $redirect_url = add_query_arg('page', $new_page, admin_url('admin.php'));
-                wp_safe_remote_get($redirect_url);
-                wp_safe_redirect($redirect_url);
+            if (isset($oldToNew[$currentPage])) {
+                $newPage = $oldToNew[$currentPage];
+                $redirectUrl = add_query_arg('page', $newPage, admin_url('admin.php'));
+                wp_safe_remote_get($redirectUrl);
+                wp_safe_redirect($redirectUrl);
                 exit;
             }
         }
     }
     
-    /**
-     * Get endpoint slug from settings
-     */
-    private function get_endpoint() {
-        $settings = get_option($this->option_name, array());
+    private function getEndpoint() {
+        $settings = get_option($this->optionName, array());
         $endpoint = isset($settings['endpoint_slug']) ? $settings['endpoint_slug'] : 'shipping-webhook';
         return sanitize_title($endpoint);
     }
@@ -125,80 +122,80 @@ class Commerce_Control_Suite {
     /**
      * Add admin menu
      */
-    public function add_admin_menu() {
+    public function addAdminMenu() {
         // Handle old slug for backward compatibility
-        add_action('admin_init', array($this, 'handle_old_page_slug'));
+        add_action('admin_init', array($this, 'handleOldPageSlug'));
         
         // Add top-level menu in sidebar
         add_menu_page(
             'Commerce Control Suite',
             'WC Control Suite',
             'manage_options',
-            'commerce-control-suite',
-            array($this, 'render_dashboard_page'),
+            self::PAGE_DASHBOARD,
+            array($this, 'renderDashboardPage'),
             'dashicons-admin-generic',
             56
         );
         
         // Add submenu for Dashboard
         add_submenu_page(
-            'commerce-control-suite',
+            self::PAGE_DASHBOARD,
             'Dashboard',
             'Dashboard',
             'manage_options',
-            'commerce-control-suite',
-            array($this, 'render_dashboard_page')
+            self::PAGE_DASHBOARD,
+            array($this, 'renderDashboardPage')
         );
         
         // Add submenu for Event Logs
         add_submenu_page(
-            'commerce-control-suite',
+            self::PAGE_DASHBOARD,
             'Shipping Event Logs',
             'Event Logs',
             'manage_options',
-            'commerce-event-logs',
-            array($this, 'render_settings_page')
+            self::PAGE_LOGS,
+            array($this, 'renderSettingsPage')
         );
         
         // Add submenu for Order Control
         add_submenu_page(
-            'commerce-control-suite',
-            'Order Control',
-            'Order Control',
+            self::PAGE_DASHBOARD,
+            self::LABEL_ORDER_CONTROL,
+            self::LABEL_ORDER_CONTROL,
             'manage_options',
-            'commerce-order-control',
-            array($this, 'render_order_control_page')
+            self::PAGE_ORDER_CONTROL,
+            array($this, 'renderOrderControlPage')
         );
         
         // Add submenu for Payment Gateway Control
         add_submenu_page(
-            'commerce-control-suite',
-            'Payment Gateway Control',
-            'Payment Gateway',
+            self::PAGE_DASHBOARD,
+            self::LABEL_PAYMENT_GATEWAY,
+            self::LABEL_PAYMENT_GATEWAY,
             'manage_options',
-            'commerce-payment-gateway',
-            array($this, 'render_payment_gateway_page')
+            self::PAGE_PAYMENT_GATEWAY,
+            array($this, 'renderPaymentGatewayPage')
         );
     }
     
     /**
      * Register settings
      */
-    public function register_settings() {
-        register_setting($this->option_name, $this->option_name, array($this, 'sanitize_settings'));
+    public function registerSettings() {
+        register_setting($this->optionName, $this->optionName, array($this, 'sanitizeSettings'));
         
         add_settings_section(
             'shipping_event_general',
             'General Settings',
-            array($this, 'render_section_info'),
-            'commerce-control-suite'
+            array($this, 'renderSectionInfo'),
+            self::PAGE_DASHBOARD
         );
         
         add_settings_field(
             'endpoint_slug',
             'Endpoint Slug',
-            array($this, 'render_endpoint_field'),
-            'commerce-control-suite',
+            array($this, 'renderEndpointField'),
+            self::PAGE_DASHBOARD,
             'shipping_event_general'
         );
     }
@@ -206,7 +203,7 @@ class Commerce_Control_Suite {
     /**
      * Sanitize settings
      */
-    public function sanitize_settings($input) {
+    public function sanitizeSettings($input) {
         $sanitized = array();
         
         if (isset($input['endpoint_slug'])) {
@@ -222,118 +219,129 @@ class Commerce_Control_Suite {
     /**
      * Render settings section info
      */
-    public function render_section_info() {
+    public function renderSectionInfo() {
         echo '<p>' . esc_html__('Configure your shipping webhook endpoint settings.', 'commerce-control-suite') . '</p>';
     }
     
     /**
      * Render endpoint field
      */
-    public function render_endpoint_field() {
-        $settings = get_option($this->option_name, array());
+    public function renderEndpointField() {
+        $settings = get_option($this->optionName, array());
         $endpoint = isset($settings['endpoint_slug']) ? $settings['endpoint_slug'] : 'shipping-webhook';
-        $full_url = rest_url('shipping/v1/' . $endpoint);
+        $fullUrl = rest_url('shipping/v1/' . $endpoint);
         
-        echo '<input type="text" name="' . esc_attr($this->option_name) . '[endpoint_slug]" value="' . esc_attr($endpoint) . '" class="regular-text" />';
-        echo '<p class="description">Enter the endpoint slug (e.g., "shipping-webhook"). The full URL will be: <br><strong>' . esc_url($full_url) . '</strong></p>';
+        printf(
+            '<input type="text" name="%s[endpoint_slug]" value="%s" class="regular-text" />',
+            esc_attr($this->optionName),
+            esc_attr($endpoint)
+        );
+        echo '<p class="description">' . wp_kses(
+            sprintf(
+                __('Enter the endpoint slug (e.g., "shipping-webhook"). The full URL will be: <br><strong>%s</strong>', 'commerce-control-suite'),
+                esc_url($fullUrl)
+            ),
+            array('br' => array(), 'strong' => array())
+        ) . '</p>';
     }
     
     /**
      * Render Dashboard page
      */
-    public function render_dashboard_page() {
+    public function renderDashboardPage() {
+        global $wpdb;
         if (!current_user_can('manage_options')) {
             return;
         }
         
         // Get statistics
-        $log_table = $wpdb->prefix . $this->log_table;
+        $logTable = $wpdb->prefix . $this->logTable;
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $total_logs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i", $log_table ) );
+        $totalLogs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i", $logTable ) );
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $success_logs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'success'", $log_table ) );
+        $successLogs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'success'", $logTable ) );
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $error_logs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'error'", $log_table ) );
+        $errorLogs = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'error'", $logTable ) );
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $recent_logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY created_at DESC LIMIT 5", $log_table ) );
+        $recentLogs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY created_at DESC LIMIT 5", $logTable ) );
         
-        $order_stats = $this->order_control->get_statistics();
-        $payment_stats = $this->payment_gateway_control->get_statistics();
+        $orderStats = $this->orderControl->getStatistics();
+        $paymentStats = $this->paymentGatewayControl->getStatistics();
         
-        $settings = get_option($this->option_name, array());
+        $settings = get_option($this->optionName, array());
         $endpoint = isset($settings['endpoint_slug']) ? $settings['endpoint_slug'] : 'shipping-webhook';
-        $full_url = rest_url('shipping/v1/' . $endpoint);
+        $fullUrl = rest_url('shipping/v1/' . $endpoint);
         
         ?>
         <div class="wrap">
-            <h1>Commerce Control Suite - Dashboard</h1>
+            <h1><?php esc_html_e('Commerce Control Suite - Dashboard', 'commerce-control-suite'); ?></h1>
             
             <div class="dashboard-widgets" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0;">
                 
                 <!-- Webhook Info -->
                 <div class="dashboard-widget" style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
-                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-admin-links" style="color: #2271b1;"></span> Shipping Webhook</h2>
-                    <p><strong>URL:</strong></p>
-                    <input type="text" value="<?php echo esc_url($full_url); ?>" readonly class="large-text" style="background: #f5f5f5;" />
+                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-admin-links" style="color: #2271b1;"></span> <?php esc_html_e('Shipping Webhook', 'commerce-control-suite'); ?></h2>
+                    <p><strong><?php esc_html_e('URL:', 'commerce-control-suite'); ?></strong></p>
+                    <input type="text" value="<?php echo esc_url($fullUrl); ?>" readonly class="large-text" style="background: #f5f5f5;" />
                     <p style="margin-top: 10px;">
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-event-logs')); ?>" class="button">View Logs</a>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_LOGS)); ?>" class="button"><?php esc_html_e('View Logs', 'commerce-control-suite'); ?></a>
                     </p>
                 </div>
                 
                 <!-- Event Logs Stats -->
                 <div class="dashboard-widget" style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
-                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-list-view" style="color: #2271b1;"></span> Event Logs</h2>
-                    <p><strong>Total:</strong> <?php echo number_format($total_logs); ?></p>
-                    <p><strong>Success:</strong> <span style="color: green;"><?php echo number_format($success_logs); ?></span></p>
-                    <p><strong>Errors:</strong> <span style="color: red;"><?php echo number_format($error_logs); ?></span></p>
+                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-list-view" style="color: #2271b1;"></span> <?php esc_html_e('Event Logs', 'commerce-control-suite'); ?></h2>
+                    <p><strong><?php esc_html_e('Total:', 'commerce-control-suite'); ?></strong> <?php echo esc_html(number_format($totalLogs)); ?></p>
+                    <p><strong><?php esc_html_e('Success:', 'commerce-control-suite'); ?></strong> <span style="color: green;"><?php echo esc_html(number_format($successLogs)); ?></span></p>
+                    <p><strong><?php esc_html_e('Errors:', 'commerce-control-suite'); ?></strong> <span style="color: red;"><?php echo esc_html(number_format($errorLogs)); ?></span></p>
                     <p>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-event-logs')); ?>" class="button">View All Logs</a>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_LOGS)); ?>" class="button"><?php esc_html_e('View All Logs', 'commerce-control-suite'); ?></a>
                     </p>
                 </div>
                 
                 <!-- Order Control Stats -->
                 <div class="dashboard-widget" style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
-                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-cart" style="color: #2271b1;"></span> Order Control</h2>
-                    <p><strong>Status:</strong> <span style="color: <?php echo $order_stats['current_status'] === 'active' ? 'green' : 'red'; ?>; font-weight: bold;"><?php echo esc_html(ucfirst($order_stats['current_status'])); ?></span></p>
-                    <p><strong>Orders Enabled:</strong> <?php echo $order_stats['orders_enabled'] ? 'Yes' : 'No'; ?></p>
-                    <p><strong>Timeframe Enabled:</strong> <?php echo $order_stats['timeframe_enabled'] ? 'Yes' : 'No'; ?></p>
+                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-cart" style="color: #2271b1;"></span> <?php esc_html_e('Order Control', 'commerce-control-suite'); ?></h2>
+                    <p><strong><?php esc_html_e('Status:', 'commerce-control-suite'); ?></strong> <span style="color: <?php echo esc_attr($orderStats['current_status'] === 'active' ? 'green' : 'red'); ?>; font-weight: bold;"><?php echo esc_html(ucfirst($orderStats['current_status'])); ?></span></p>
+                    <p><strong><?php esc_html_e('Orders Enabled:', 'commerce-control-suite'); ?></strong> <?php echo $orderStats['orders_enabled'] ? esc_html__('Yes', 'commerce-control-suite') : esc_html__('No', 'commerce-control-suite'); ?></p>
+                    <p><strong><?php esc_html_e('Timeframe Enabled:', 'commerce-control-suite'); ?></strong> <?php echo $orderStats['timeframe_enabled'] ? esc_html__('Yes', 'commerce-control-suite') : esc_html__('No', 'commerce-control-suite'); ?></p>
                     <p>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-order-control')); ?>" class="button">Manage Orders</a>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_ORDER_CONTROL)); ?>" class="button"><?php esc_html_e('Manage Orders', 'commerce-control-suite'); ?></a>
                     </p>
                 </div>
                 
                 <!-- Payment Gateway Stats -->
                 <div class="dashboard-widget" style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
-                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-money-alt" style="color: #2271b1;"></span> Payment Gateways</h2>
-                    <p><strong>Total Rules:</strong> <?php echo number_format($payment_stats['total_rules']); ?></p>
-                    <p><strong>Active Currencies:</strong> <?php echo number_format($payment_stats['active_currencies']); ?></p>
-                    <p><strong>Available Gateways:</strong> <?php echo number_format($payment_stats['available_gateways']); ?></p>
+                    <h2 style="margin-top: 0;"><span class="dashicons dashicons-money-alt" style="color: #2271b1;"></span> <?php esc_html_e('Payment Gateways', 'commerce-control-suite'); ?></h2>
+                    <p><strong><?php esc_html_e('Total Rules:', 'commerce-control-suite'); ?></strong> <?php echo esc_html(number_format($paymentStats['total_rules'])); ?></p>
+                    <p><strong><?php esc_html_e('Active Currencies:', 'commerce-control-suite'); ?></strong> <?php echo esc_html(number_format($paymentStats['active_currencies'])); ?></p>
+                    <p><strong><?php esc_html_e('Available Gateways:', 'commerce-control-suite'); ?></strong> <?php echo esc_html(number_format($paymentStats['available_gateways'])); ?></p>
                     <p>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-payment-gateway')); ?>" class="button">Manage Gateways</a>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE_PAYMENT_GATEWAY)); ?>" class="button"><?php esc_html_e('Manage Gateways', 'commerce-control-suite'); ?></a>
                     </p>
                 </div>
             </div>
             
             <!-- Recent Activity -->
             <div style="background: #fff; padding: 20px; border: 1px solid #ccc; border-radius: 5px; margin-top: 20px;">
-                <h2><span class="dashicons dashicons-clock" style="color: #2271b1;"></span> Recent Event Logs</h2>
-                <?php if (!empty($recent_logs)): ?>
+                <h2><span class="dashicons dashicons-clock" style="color: #2271b1;"></span> <?php esc_html_e('Recent Event Logs', 'commerce-control-suite'); ?></h2>
+                <?php if (!empty($recentLogs)): ?>
                 <table class="wp-list-table widefat fixed striped">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>IP Address</th>
-                            <th>Status</th>
-                            <th>Created At</th>
+                            <th><?php esc_html_e('ID', 'commerce-control-suite'); ?></th>
+                            <th><?php esc_html_e('IP Address', 'commerce-control-suite'); ?></th>
+                            <th><?php esc_html_e('Status', 'commerce-control-suite'); ?></th>
+                            <th><?php esc_html_e('Created At', 'commerce-control-suite'); ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($recent_logs as $log): ?>
+                        <?php foreach ($recentLogs as $log): ?>
                         <tr>
                             <td><?php echo esc_html($log->id); ?></td>
                             <td><?php echo esc_html($log->ip_address); ?></td>
                             <td>
-                                <span style="color: <?php echo $log->status === 'success' ? 'green' : 'red'; ?>; font-weight: bold;">
+                                <span style="color: <?php echo esc_attr($log->status === 'success' ? 'green' : 'red'); ?>; font-weight: bold;">
                                     <?php echo esc_html($log->status); ?>
                                 </span>
                             </td>
@@ -343,7 +351,7 @@ class Commerce_Control_Suite {
                     </tbody>
                 </table>
                 <?php else: ?>
-                <p>No recent logs found.</p>
+                <p><?php esc_html_e('No recent logs found.', 'commerce-control-suite'); ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -353,35 +361,35 @@ class Commerce_Control_Suite {
     /**
      * Render settings page
      */
-    public function render_settings_page() {
+    public function renderSettingsPage() {
         if (!current_user_can('manage_options')) {
             return;
         }
         
-        $settings = get_option($this->option_name, array());
+        $settings = get_option($this->optionName, array());
         $endpoint = isset($settings['endpoint_slug']) ? $settings['endpoint_slug'] : 'shipping-webhook';
-        $full_url = rest_url('shipping/v1/' . $endpoint);
+        $fullUrl = rest_url('shipping/v1/' . $endpoint);
         
         ?>
         <div class="wrap">
-            <h1><span class="dashicons dashicons-list-view"></span> Shipping Event Logs</h1>
+            <h1><span class="dashicons dashicons-list-view"></span> <?php esc_html_e('Shipping Event Logs', 'commerce-control-suite'); ?></h1>
             
             <div class="notice notice-info">
-                <p><strong>Current Webhook URL:</strong> <code><?php echo esc_url($full_url); ?></code></p>
+                <p><strong><?php esc_html_e('Current Webhook URL:', 'commerce-control-suite'); ?></strong> <code><?php echo esc_url($fullUrl); ?></code></p>
             </div>
             
             <form method="post" action="options.php">
                 <?php
-                settings_fields($this->option_name);
-                do_settings_sections('commerce-control-suite');
+                settings_fields($this->optionName);
+                do_settings_sections(self::PAGE_DASHBOARD);
                 submit_button(__('Save Settings', 'commerce-control-suite'));
                 ?>
             </form>
             
             <hr>
             
-            <h2>Recent Logs</h2>
-            <?php $this->render_logs_table(); ?>
+            <h2><?php esc_html_e('Recent Logs', 'commerce-control-suite'); ?></h2>
+            <?php $this->renderLogsTable(); ?>
         </div>
         <?php
     }
@@ -389,12 +397,12 @@ class Commerce_Control_Suite {
     /**
      * Render logs table
      */
-    private function render_logs_table() {
+    private function renderLogsTable() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . $this->log_table;
+        $tableName = $wpdb->prefix . $this->logTable;
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        $logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY created_at DESC LIMIT 20", $table_name ) );
+        $logs = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM %i ORDER BY created_at DESC LIMIT 20", $tableName ) );
         
         if (empty($logs)) {
             echo '<p>' . esc_html__('No logs found yet.', 'commerce-control-suite') . '</p>';
@@ -669,44 +677,22 @@ class Commerce_Control_Suite {
         <?php
     }
     
-    /**
-     * Add settings link on plugins page
-     */
-    public function add_settings_link($links) {
-        $settings_link = '<a href="' . admin_url('admin.php?page=commerce-control-suite') . '">Settings</a>';
-        array_unshift($links, $settings_link);
+    public function addSettingsLink($links) {
+        $settingsLink = '<a href="' . esc_url(admin_url('admin.php?page=' . self::PAGE_DASHBOARD)) . '">' . esc_html__('Settings', 'commerce-control-suite') . '</a>';
+        array_unshift($links, $settingsLink);
         return $links;
     }
     
-    /**
-     * Render Order Control page
-     */
-    public function render_order_control_page() {
+    public function renderOrderControlPage() {
         if (!current_user_can('manage_options')) {
             return;
         }
         
         // Handle form submission
-        if (isset($_POST['ser_order_control_nonce']) && wp_verify_nonce($_POST['ser_order_control_nonce'], 'ser_order_control_save')) {
-            $settings = array(
-                'enable_orders' => isset($_POST['enable_orders']) ? true : false,
-                'enable_timeframe' => isset($_POST['enable_timeframe']) ? true : false,
-                'enable_date_range' => isset($_POST['enable_date_range']) ? true : false,
-                'start_time' => sanitize_text_field($_POST['start_time']),
-                'end_time' => sanitize_text_field($_POST['end_time']),
-                'start_datetime' => sanitize_text_field($_POST['start_datetime']),
-                'end_datetime' => sanitize_text_field($_POST['end_datetime']),
-                'restriction_type' => sanitize_text_field($_POST['restriction_type']),
-                'restricted_categories' => isset($_POST['restricted_categories']) ? array_map('intval', $_POST['restricted_categories']) : array(),
-                'restricted_products' => isset($_POST['restricted_products']) ? array_map('intval', $_POST['restricted_products']) : array(),
-                'disabled_message' => isset($_POST['disabled_message']) ? sanitize_textarea_field(wp_unslash($_POST['disabled_message'])) : ''
-            );
-            $this->order_control->update_settings($settings);
-            echo '<div class="notice notice-success"><p>' . esc_html__('Settings saved successfully!', 'commerce-control-suite') . '</p></div>';
-        }
+        $this->handleOrderControlSubmission();
         
-        $settings = $this->order_control->get_settings();
-        $stats = $this->order_control->get_statistics();
+        $settings = $this->orderControl->getSettings();
+        $stats = $this->orderControl->getStatistics();
         
         // Get categories and products for dropdowns
         $categories = get_terms(array('taxonomy' => 'product_cat', 'hide_empty' => false));
@@ -714,10 +700,10 @@ class Commerce_Control_Suite {
         
         ?>
         <div class="wrap">
-            <h1><span class="dashicons dashicons-cart"></span> Order Control Settings</h1>
+            <h1><span class="dashicons dashicons-cart"></span> <?php echo esc_html(self::LABEL_ORDER_CONTROL); ?> Settings</h1>
             
             <div class="notice notice-info">
-                <p><strong>' . esc_html__('Current Status:', 'commerce-control-suite') . '</strong> <span style="color: ' . ($stats['current_status'] === 'active' ? 'green' : 'red') . '; font-weight: bold;">' . esc_html(ucfirst($stats['current_status'])) . '</span></p>
+                <p><strong><?php esc_html_e('Current Status:', 'commerce-control-suite'); ?></strong> <span style="color: <?php echo esc_attr($stats['current_status'] === 'active' ? 'green' : 'red'); ?>; font-weight: bold;"><?php echo esc_html(ucfirst($stats['current_status'])); ?></span></p>
             </div>
             
             <form method="post" action="">
@@ -861,7 +847,7 @@ class Commerce_Control_Suite {
                     </tr>
                 </table>
                 
-                <?php submit_button('Save Settings'); ?>
+                <?php submit_button(__('Save Settings', 'commerce-control-suite')); ?>
             </form>
             
             <script>
@@ -962,9 +948,9 @@ class Commerce_Control_Suite {
             
             <div class="notice notice-info">
                 <p>
-                    <strong>' . esc_html__('Total Rules:', 'commerce-control-suite') . '</strong> ' . esc_html($stats['total_rules']) . ' | 
-                    <strong>' . esc_html__('Active Currencies:', 'commerce-control-suite') . '</strong> ' . esc_html($stats['active_currencies']) . ' | 
-                    <strong>' . esc_html__('Available Gateways:', 'commerce-control-suite') . '</strong> ' . esc_html($stats['available_gateways']) . '
+                    <strong><?php esc_html_e('Total Rules:', 'commerce-control-suite'); ?></strong> <?php echo esc_html($stats['total_rules']); ?> | 
+                    <strong><?php esc_html_e('Active Currencies:', 'commerce-control-suite'); ?></strong> <?php echo esc_html($stats['active_currencies']); ?> | 
+                    <strong><?php esc_html_e('Available Gateways:', 'commerce-control-suite'); ?></strong> <?php echo esc_html($stats['available_gateways']); ?>
                 </p>
             </div>
             
@@ -1033,14 +1019,14 @@ class Commerce_Control_Suite {
                         
                         <p class="submit">
                             <input type="submit" name="submit" class="button button-primary" value="Save Rule" />
-                            <a href="<?php echo admin_url('admin.php?page=commerce-payment-gateway'); ?>" class="button">Cancel</a>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-payment-gateway')); ?>" class="button">Cancel</a>
                         </p>
                     </form>
                 </div>
             <?php else: ?>
                 <!-- Rules List Table -->
                 <p>
-                    <a href="<?php echo admin_url('admin.php?page=commerce-payment-gateway&action=add'); ?>" class="button button-primary">Add New Rule</a>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-payment-gateway&action=add')); ?>" class="button button-primary">Add New Rule</a>
                 </p>
                 
                 <?php if (!empty($settings['rules'])): ?>
@@ -1085,11 +1071,11 @@ class Commerce_Control_Suite {
                                 ?>
                             </td>
                             <td>
-                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=edit&rule_id=' . $index), 'edit_rule'); ?>" class="button button-small">Edit</a>
-                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=toggle&rule_id=' . $index), 'toggle_rule'); ?>" class="button button-small">
+                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=edit&rule_id=' . $index), 'edit_rule')); ?>" class="button button-small">Edit</a>
+                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=toggle&rule_id=' . $index), 'toggle_rule')); ?>" class="button button-small">
                                     <?php echo $is_enabled ? 'Disable' : 'Enable'; ?>
                                 </a>
-                                <a href="<?php echo wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=delete&rule_id=' . $index), 'delete_rule'); ?>" 
+                                <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin.php?page=commerce-payment-gateway&action=delete&rule_id=' . $index), 'delete_rule')); ?>" 
                                    class="button button-small" 
                                    onclick="return confirm('Are you sure you want to delete this rule?');">Delete</a>
                             </td>
@@ -1099,7 +1085,7 @@ class Commerce_Control_Suite {
                 </table>
                 <?php else: ?>
                 <div class="notice notice-warning">
-                    <p>No payment gateway rules configured yet. <a href="<?php echo admin_url('admin.php?page=commerce-payment-gateway&action=add'); ?>">Add your first rule</a>.</p>
+                    <p>No payment gateway rules configured yet. <a href="<?php echo esc_url(admin_url('admin.php?page=commerce-payment-gateway&action=add')); ?>">Add your first rule</a>.</p>
                 </div>
                 <?php endif; ?>
             <?php endif; ?>
@@ -1110,7 +1096,7 @@ class Commerce_Control_Suite {
     /**
      * AJAX handler to get log details
      */
-    public function ajax_get_log_details() {
+    public function ajaxGetLogDetails() {
         check_ajax_referer('shipping_event_logs', 'nonce');
         
         if (!current_user_can('manage_options')) {
@@ -1118,16 +1104,17 @@ class Commerce_Control_Suite {
             return;
         }
         
-        $log_id = isset($_POST['log_id']) ? intval($_POST['log_id']) : 0;
+        $logId = isset($_POST['log_id']) ? intval($_POST['log_id']) : 0;
         
-        if (!$log_id) {
+        if (!$logId) {
             wp_send_json_error('Invalid log ID');
             return;
         }
         
         global $wpdb;
-        $table_name = $wpdb->prefix . $this->log_table;
-        $log = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $log_id));
+        $tableName = $wpdb->prefix . $this->logTable;
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $log = $wpdb->get_row($wpdb->prepare("SELECT * FROM %i WHERE id = %d", $tableName, $logId));
         
         if (!$log) {
             wp_send_json_error('Log not found');
@@ -1153,20 +1140,17 @@ class Commerce_Control_Suite {
     /**
      * Register the REST API endpoint
      */
-    public function register_endpoint() {
-        $endpoint = $this->get_endpoint();
+    public function registerEndpoint() {
+        $endpoint = $this->getEndpoint();
         
         register_rest_route('shipping/v1', '/' . $endpoint, array(
             'methods' => 'POST',
-            'callback' => array($this, 'handle_webhook'),
+            'callback' => array($this, 'handleWebhook'),
             'permission_callback' => '__return_true', // Adjust security as needed
         ));
     }
     
-    /**
-     * Handle incoming webhook requests
-     */
-    public function handle_webhook(WP_REST_Request $request) {
+    public function handleWebhook(WP_REST_Request $request) {
         global $wpdb;
         
         // Get request data
@@ -1175,54 +1159,51 @@ class Commerce_Control_Suite {
         $headers = $request->get_headers();
         
         // Log the request
-        $log_id = $this->log_request($body, $params, $headers);
+        $logId = $this->logRequest($body, $params, $headers);
         
         // Process the event
         try {
-            $response_data = $this->process_event($params);
+            $responseData = $this->processEvent($params);
             
             // Update log with success status
-            $this->update_log_status($log_id, 'success', $response_data);
+            $this->updateLogStatus($logId, 'success', $responseData);
             
             return new WP_REST_Response(array(
                 'success' => true,
                 'message' => 'Event received and processed',
-                'log_id' => $log_id,
-                'data' => $response_data
+                'log_id' => $logId,
+                'data' => $responseData
             ), 200);
             
         } catch (Exception $e) {
             // Update log with error status
-            $this->update_log_status($log_id, 'error', array('error' => $e->getMessage()));
+            $this->updateLogStatus($logId, 'error', array('error' => $e->getMessage()));
             
             return new WP_REST_Response(array(
                 'success' => false,
                 'message' => 'Error processing event',
                 'error' => $e->getMessage(),
-                'log_id' => $log_id
+                'log_id' => $logId
             ), 500);
         }
     }
     
-    /**
-     * Process the shipping event
-     */
-    private function process_event($data) {
+    private function processEvent($data) {
         // Extract common fields (adjust based on your shipping platform's format)
-        $order_id = isset($data['order_id']) ? sanitize_text_field($data['order_id']) : null;
-        $tracking_number = isset($data['tracking_number']) ? sanitize_text_field($data['tracking_number']) : null;
+        $orderId = isset($data['order_id']) ? sanitize_text_field($data['order_id']) : null;
+        $trackingNumber = isset($data['tracking_number']) ? sanitize_text_field($data['tracking_number']) : null;
         $status = isset($data['status']) ? sanitize_text_field($data['status']) : null;
-        $event_type = isset($data['event_type']) ? sanitize_text_field($data['event_type']) : null;
+        $eventType = isset($data['event_type']) ? sanitize_text_field($data['event_type']) : null;
         
         // Add your custom processing logic here
         // For example: update order meta, send notifications, etc.
         
-        if ($order_id && function_exists('wc_get_order')) {
-            $order = wc_get_order($order_id);
+        if ($orderId && function_exists('wc_get_order')) {
+            $order = wc_get_order($orderId);
             if ($order) {
                 // Update order meta with shipping info
-                if ($tracking_number) {
-                    $order->update_meta_data('_shipping_tracking_number', $tracking_number);
+                if ($trackingNumber) {
+                    $order->update_meta_data('_shipping_tracking_number', $trackingNumber);
                 }
                 if ($status) {
                     $order->add_order_note(sprintf('Shipping status updated: %s', $status));
@@ -1235,29 +1216,26 @@ class Commerce_Control_Suite {
         do_action('shipping_event_received', $data);
         
         return array(
-            'order_id' => $order_id,
-            'tracking_number' => $tracking_number,
+            'order_id' => $orderId,
+            'tracking_number' => $trackingNumber,
             'status' => $status,
-            'event_type' => $event_type,
+            'event_type' => $eventType,
             'processed_at' => current_time('mysql')
         );
     }
     
-    /**
-     * Log the incoming request
-     */
-    private function log_request($body, $params, $headers) {
+    private function logRequest($body, $params, $headers) {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . $this->log_table;
+        $tableName = $wpdb->prefix . $this->logTable;
         
         $wpdb->insert(
-            $table_name,
+            $tableName,
             array(
                 'request_body' => $body,
-                'request_params' => json_encode($params),
-                'request_headers' => json_encode($headers),
-                'ip_address' => $this->get_client_ip(),
+                'request_params' => wp_json_encode($params),
+                'request_headers' => wp_json_encode($headers),
+                'ip_address' => $this->getClientIp(),
                 'created_at' => current_time('mysql'),
                 'status' => 'pending'
             ),
@@ -1267,67 +1245,55 @@ class Commerce_Control_Suite {
         return $wpdb->insert_id;
     }
     
-    /**
-     * Update log status after processing
-     */
-    private function update_log_status($log_id, $status, $response_data = array()) {
+    private function updateLogStatus($logId, $status, $responseData = array()) {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . $this->log_table;
+        $tableName = $wpdb->prefix . $this->logTable;
         
         $wpdb->update(
-            $table_name,
+            $tableName,
             array(
                 'status' => $status,
-                'response_data' => json_encode($response_data),
+                'response_data' => wp_json_encode($responseData),
                 'processed_at' => current_time('mysql')
             ),
-            array('id' => $log_id),
+            array('id' => $logId),
             array('%s', '%s', '%s'),
             array('%d')
         );
     }
     
-    /**
-     * Get client IP address
-     */
-    private function get_client_ip() {
+    private function getClientIp() {
         $ip = '';
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            $ip = $_SERVER['HTTP_CLIENT_IP'];
+            $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_CLIENT_IP']));
         } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } else {
-            $ip = $_SERVER['REMOTE_ADDR'];
+            $ip = sanitize_text_field(wp_unslash($_SERVER['HTTP_X_FORWARDED_FOR']));
+        } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+            $ip = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR']));
         }
-        return sanitize_text_field($ip);
+        return $ip;
     }
     
-    /**
-     * Check if database table exists and create if not
-     */
-    public function check_database_table() {
+    public function checkDatabaseTable() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . $this->log_table;
+        $tableName = $wpdb->prefix . $this->logTable;
         
         // Check if table exists
         // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-        if ($wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $table_name ) ) != $table_name) {
-            $this->create_log_table();
+        if ($wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $tableName ) ) != $tableName) {
+            $this->createLogTable();
         }
     }
     
-    /**
-     * Create database table for logging
-     */
-    public function create_log_table() {
+    public function createLogTable() {
         global $wpdb;
         
-        $table_name = $wpdb->prefix . $this->log_table;
-        $charset_collate = $wpdb->get_charset_collate();
+        $tableName = $wpdb->prefix . $this->logTable;
+        $charsetCollate = $wpdb->get_charset_collate();
         
-        $sql = "CREATE TABLE IF NOT EXISTS $table_name (
+        $sql = "CREATE TABLE IF NOT EXISTS $tableName (
             id bigint(20) NOT NULL AUTO_INCREMENT,
             request_body longtext NOT NULL,
             request_params longtext,
@@ -1340,7 +1306,7 @@ class Commerce_Control_Suite {
             PRIMARY KEY  (id),
             KEY status (status),
             KEY created_at (created_at)
-        ) $charset_collate;";
+        ) $charsetCollate;";
         
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql);
@@ -1363,8 +1329,8 @@ function shipping_event_receiver_init() {
         return;
     }
 
-    if (!isset($GLOBALS['commerce_control_suite_instance']) && class_exists('Commerce_Control_Suite')) {
-        $GLOBALS['commerce_control_suite_instance'] = new Commerce_Control_Suite();
+    if (!isset($GLOBALS['commerceControlSuiteInstance']) && class_exists('CommerceControlSuite')) {
+        $GLOBALS['commerceControlSuiteInstance'] = new CommerceControlSuite();
     }
 }
 
