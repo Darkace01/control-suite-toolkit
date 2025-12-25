@@ -25,7 +25,7 @@ class CommerceControlSuitePaymentGatewayControl {
         }
         
         $settings = $this->getSettings();
-        $currentCurrency = get_woocommerce_currency();
+        $currentCurrency = CommerceControlSuiteCurrencyControl::instance()->get_current_currency();
         
         if (empty($settings['rules']) || !is_array($settings['rules'])) {
             return $availableGateways;
@@ -82,17 +82,13 @@ class CommerceControlSuitePaymentGatewayControl {
      * Get active currencies
      */
     public function getActiveCurrencies() {
-        $currencies = get_woocommerce_currencies();
-        $active = array(get_woocommerce_currency() => $currencies[get_woocommerce_currency()]);
+        $all_currencies = get_woocommerce_currencies();
+        $active_currencies_codes = CommerceControlSuiteCurrencyControl::instance()->get_available_currencies();
         
-        // Check for multi-currency plugin support
-        if (class_exists('WOOCS')) {
-            global $WOOCS;
-            $woocsCurrencies = $WOOCS->get_currencies();
-            foreach ($woocsCurrencies as $currency) {
-                if (isset($currencies[$currency['name']])) {
-                    $active[$currency['name']] = $currencies[$currency['name']];
-                }
+        $active = array();
+        foreach ($active_currencies_codes as $code) {
+            if (isset($all_currencies[$code])) {
+                $active[$code] = $all_currencies[$code];
             }
         }
         

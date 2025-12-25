@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Commerce Control Suite
  * Plugin URI: https://github.com/Darkace01/ommerce-control-suite
- * Description: Complete control suite for WooCommerce - manage order restrictions, payment gateway rules, and shipping event webhooks
- * Version: 1.2.7
+ * Description: Complete control suite for WooCommerce - manage order restrictions, payment gateway rules, shipping event webhooks, and advanced currency control with URL switching and product-specific pricing.
+ * Version: 1.2.8
  * Author: Kazeem Quadri
  * Author URI: https://github.com/Darkace01
  * License: GPL v2 or later
@@ -44,15 +44,18 @@ class CommerceControlSuite {
     const PAGE_LOGS = 'commerce-event-logs';
     const PAGE_ORDER_CONTROL = 'commerce-order-control';
     const PAGE_PAYMENT_GATEWAY = 'commerce-payment-gateway';
+    const PAGE_CURRENCY_CONTROL = 'commerce-currency-control';
     
     const LABEL_ORDER_CONTROL = 'Order Control';
     const LABEL_PAYMENT_GATEWAY = 'Payment Gateway';
+    const LABEL_CURRENCY_CONTROL = 'Currency Control';
     
     private $logTable = 'shipping_event_logs';
     private $optionName = 'shipping_event_receiver_settings';
     private $pluginFile;
     private $orderControl;
     private $paymentGatewayControl;
+	private $currencyControl;
     
     public function __construct() {
         $this->pluginFile = COMMERCE_CONTROL_SUITE_FILE;
@@ -63,6 +66,7 @@ class CommerceControlSuite {
         // Initialize sub-modules
         $this->orderControl = new CommerceControlSuiteOrderControl();
         $this->paymentGatewayControl = new CommerceControlSuitePaymentGatewayControl();
+		$this->currencyControl = CommerceControlSuiteCurrencyControl::instance();
         
         // Register REST API endpoint
         add_action('rest_api_init', array($this, 'registerEndpoint'));
@@ -87,6 +91,7 @@ class CommerceControlSuite {
     private function loadDependencies() {
         require_once plugin_dir_path($this->pluginFile) . 'includes/class-order-control.php';
         require_once plugin_dir_path($this->pluginFile) . 'includes/class-payment-gateway-control.php';
+		require_once plugin_dir_path($this->pluginFile) . 'includes/class-currency-control.php';
     }
     
     /**
@@ -175,7 +180,17 @@ class CommerceControlSuite {
             self::LABEL_PAYMENT_GATEWAY,
             'manage_options',
             self::PAGE_PAYMENT_GATEWAY,
-            array($this, 'renderPaymentGatewayPage')
+            array($this, 'render_payment_gateway_page')
+        );
+
+        // Add submenu for Currency Control
+        add_submenu_page(
+            self::PAGE_DASHBOARD,
+            self::LABEL_CURRENCY_CONTROL,
+            self::LABEL_CURRENCY_CONTROL,
+            'manage_options',
+            self::PAGE_CURRENCY_CONTROL,
+            array($this, 'renderCurrencyControlPage')
         );
     }
     
@@ -1110,6 +1125,13 @@ class CommerceControlSuite {
             <?php endif; ?>
         </div>
         <?php
+    }
+
+    /**
+     * Render Currency Control page
+     */
+    public function renderCurrencyControlPage() {
+        $this->currencyControl->renderSettingsPage();
     }
 
     /**
