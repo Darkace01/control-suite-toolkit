@@ -3,7 +3,7 @@
  * Plugin Name: Commerce Control Suite
  * Plugin URI: https://github.com/Darkace01/ommerce-control-suite
  * Description: Complete control suite for WooCommerce - manage order restrictions, payment gateway rules, shipping event webhooks, and advanced currency control with URL switching and product-specific pricing.
- * Version: 1.2.8
+ * Version: 1.2.7
  * Author: Kazeem Quadri
  * Author URI: https://github.com/Darkace01
  * License: GPL v2 or later
