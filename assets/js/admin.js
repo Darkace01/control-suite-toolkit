@@ -81,12 +81,32 @@ jQuery(document).ready(function($) {
     // Currency rates repeater logic
     let rowIndex = $('#currency-rates-body tr').length;
 
+    function getCurrencyOptions() {
+        let options = '<option value="">Select Currency</option>';
+        if (typeof Commerce_Control_Suite_Currency_Data !== 'undefined') {
+            $.each(Commerce_Control_Suite_Currency_Data, function(code, data) {
+                options += `<option value="${code}" data-symbol="${data.symbol}">${data.name} (${code})</option>`;
+            });
+        }
+        options += '<option value="custom">Custom Currency</option>';
+        return options;
+    }
+
     $('#add-currency-rate').on('click', function() {
         let optionName = $(this).data('option-name');
         let newRow = `
             <tr class="currency-rate-row">
-                <td><input type="text" name="${optionName}[currencies][${rowIndex}][code]" class="regular-text" /></td>
-                <td><input type="text" name="${optionName}[currencies][${rowIndex}][symbol]" class="regular-text" /></td>
+                <td>
+                    <select name="${optionName}[currencies][${rowIndex}][select]" class="regular-text currency-select">
+                        ${getCurrencyOptions()}
+                    </select>
+                    <input type="text" 
+                           name="${optionName}[currencies][${rowIndex}][code]" 
+                           class="regular-text currency-code-input" 
+                           style="display:none; margin-top: 5px;" 
+                           placeholder="Enter Currency Code" />
+                </td>
+                <td><input type="text" name="${optionName}[currencies][${rowIndex}][symbol]" class="regular-text currency-symbol-input" /></td>
                 <td><input type="number" step="0.0001" name="${optionName}[currencies][${rowIndex}][rate]" class="regular-text" /></td>
                 <td><button type="button" class="button remove-currency-rate">Remove</button></td>
             </tr>
@@ -97,5 +117,22 @@ jQuery(document).ready(function($) {
 
     $('#currency-rates-table').on('click', '.remove-currency-rate', function() {
         $(this).closest('tr').remove();
+    });
+
+    // Handle currency selection change
+    $(document).on('change', '.currency-select', function() {
+        let $row = $(this).closest('tr');
+        let value = $(this).val();
+        let $codeInput = $row.find('.currency-code-input');
+        let $symbolInput = $row.find('.currency-symbol-input');
+
+        if (value === 'custom') {
+            $codeInput.show().val(''); // Show and clear custom input
+            $symbolInput.val('');
+        } else {
+            $codeInput.hide().val(value); // Hide and set value to selected code
+            let symbol = $(this).find(':selected').data('symbol');
+            $symbolInput.val(symbol || '');
+        }
     });
 });

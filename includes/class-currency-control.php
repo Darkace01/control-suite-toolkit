@@ -369,11 +369,25 @@ class Commerce_Control_Suite_Currency_Control {
      * Render currencies repeater field.
      */
     public function renderCurrenciesField() {
+        $currencies = get_woocommerce_currencies();
+        $symbols = get_woocommerce_currency_symbols();
+        $currency_options = array();
+        
+        foreach ($currencies as $code => $name) {
+            $currency_options[$code] = array(
+                'name' => $name,
+                'symbol' => isset($symbols[$code]) ? $symbols[$code] : $code
+            );
+        }
+        
+        // Pass data to JS
+        wp_localize_script('commerce-control-suite-admin', 'Commerce_Control_Suite_Currency_Data', $currency_options);
+        
         ?>
         <table id="currency-rates-table" class="wp-list-table widefat fixed striped">
             <thead>
             <tr>
-                <th style="width: 20%;">Currency Code</th>
+                <th style="width: 30%;">Currency</th>
                 <th style="width: 20%;">Currency Symbol</th>
                 <th style="width: 20%;">Exchange Rate</th>
                 <th style="width: 10%;">Remove</th>
@@ -383,7 +397,7 @@ class Commerce_Control_Suite_Currency_Control {
             <?php
             if (!empty($this->settings['currencies'])) {
                 foreach ($this->settings['currencies'] as $index => $currency) {
-                    $this->renderCurrencyRow($index, $currency);
+                    $this->renderCurrencyRow($index, $currency, $currency_options);
                 }
             }
             ?>
@@ -393,11 +407,28 @@ class Commerce_Control_Suite_Currency_Control {
         <?php
     }
 
-    private function renderCurrencyRow($index, $currency) {
+    private function renderCurrencyRow($index, $currency, $all_currencies = array()) {
+        $is_custom = !array_key_exists($currency['code'], $all_currencies) && !empty($currency['code']);
         ?>
         <tr class="currency-rate-row">
-            <td><input type="text" name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][code]" value="<?php echo esc_attr($currency['code']); ?>" class="regular-text" /></td>
-            <td><input type="text" name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][symbol]" value="<?php echo esc_attr($currency['symbol']); ?>" class="regular-text" /></td>
+            <td>
+                <select name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][select]" class="regular-text currency-select">
+                    <option value="">Select Currency</option>
+                    <?php foreach ($all_currencies as $code => $data): ?>
+                    <option value="<?php echo esc_attr($code); ?>" data-symbol="<?php echo esc_attr($data['symbol']); ?>" <?php selected($currency['code'], $code); ?>>
+                        <?php echo esc_html($data['name'] . ' (' . $code . ')'); ?>
+                    </option>
+                    <?php endforeach; ?>
+                    <option value="custom" <?php selected($is_custom); ?>>Custom Currency</option>
+                </select>
+                <input type="text" 
+                       name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][code]" 
+                       value="<?php echo esc_attr($currency['code']); ?>" 
+                       class="regular-text currency-code-input" 
+                       style="<?php echo $is_custom ? '' : 'display:none;'; ?> margin-top: 5px;" 
+                       placeholder="Enter Currency Code" />
+            </td>
+            <td><input type="text" name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][symbol]" value="<?php echo esc_attr($currency['symbol']); ?>" class="regular-text currency-symbol-input" /></td>
             <td><input type="number" step="0.0001" name="<?php echo esc_attr($this->option_name); ?>[currencies][<?php echo esc_attr($index); ?>][rate]" value="<?php echo esc_attr($currency['rate']); ?>" class="regular-text" /></td>
             <td><button type="button" class="button remove-currency-rate">Remove</button></td>
         </tr>
