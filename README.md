@@ -1,4 +1,4 @@
-=== Control Suite Toolkit ===
+=== Control Suite Toolkit By Kazeem ===
 Contributors: kazeemquadri
 Tags: woocommerce, order control, payment gateway, shipping, webhooks
 Plugin URI: https://github.com/Darkace01/control-suite-toolkit
@@ -12,7 +12,7 @@ Manage WooCommerce order restrictions, payment gateway rules, shipping event web
 
 == Description ==
 
-Control Suite Toolkit is a comprehensive WordPress plugin that gives you complete control over your WooCommerce store operations. Manage order restrictions, payment gateway rules, shipping event webhooks, and advanced currency switching all from one powerful dashboard.
+Control Suite Toolkit By Kazeem is a comprehensive WordPress plugin that gives you complete control over your WooCommerce store operations. Manage order restrictions, payment gateway rules, shipping event webhooks, and advanced currency switching all from one powerful dashboard.
 
 == Features ==
 
@@ -55,7 +55,7 @@ Control Suite Toolkit is a comprehensive WordPress plugin that gives you complet
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/control-suite-toolkit/`
+1. Upload the plugin files to `/wp-content/plugins/control-suite-toolkit-by-kazeem/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Navigate to **Control Suite Toolkit** in the WordPress admin menu
 4. Configure your settings in each section
@@ -129,8 +129,8 @@ You can implement additional security by:
 
 ### 1.2.7
 
-- Renamed plugin to "Control Suite Toolkit"
-- Updated text domain to `control-suite-toolkit`
+- Renamed plugin to "Control Suite Toolkit By Kazeem"
+- Updated text domain to `control-suite-toolkit-by-kazeem`
 - Added advanced currency switching features.
 - Fixed "Trying to access array offset on null" warning on fresh installations.
 - Added strict dependency check for WooCommerce to prevent fatal errors.

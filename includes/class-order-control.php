@@ -137,7 +137,7 @@ class Control_Suite_Toolkit_Order_Control {
         if (!$this->areOrdersEnabled()) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'control-suite-toolkit-by-kazeem');
             
             wc_add_notice(esc_html($message), 'error');
         }
@@ -153,7 +153,7 @@ class Control_Suite_Toolkit_Order_Control {
         if (!$this->areOrdersEnabled()) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'control-suite-toolkit-by-kazeem');
             
             $errors->add('orders_disabled', esc_html($message));
         }
@@ -182,7 +182,7 @@ class Control_Suite_Toolkit_Order_Control {
         if (!$this->canOrderProduct($product->get_id())) {
             $settings = $this->getSettings();
             $message = isset($settings['disabled_message']) ? $settings['disabled_message'] :
-                       __('Orders are currently disabled. Please try again later.', 'commerce-control-suite');
+                       __('Orders are currently disabled. Please try again later.', 'control-suite-toolkit-by-kazeem');
             
             echo '<div class="woocommerce-info" style="margin: 20px 0;">' . esc_html($message) . '</div>';
         }
@@ -219,7 +219,7 @@ class Control_Suite_Toolkit_Order_Control {
             'restricted_categories' => array(),
             'restricted_products' => array(),
             'redirect_url' => '',
-            'disabled_message' => __('Orders are currently disabled. Please try again later.', 'commerce-control-suite')
+            'disabled_message' => __('Orders are currently disabled. Please try again later.', 'control-suite-toolkit-by-kazeem')
         ));
     }
     
