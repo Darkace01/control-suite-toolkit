@@ -61,6 +61,9 @@ class Control_Suite_Toolkit {
     public function __construct() {
         $this->pluginFile = CONTROL_SUITE_TOOLKIT_FILE;
         
+        // Load text domain
+        add_action('init', array($this, 'loadTextDomain'));
+        
         // Load dependencies
         $this->loadDependencies();
         
@@ -108,6 +111,17 @@ class Control_Suite_Toolkit {
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce'    => wp_create_nonce('cst_event_logs')
         ));
+    }
+    
+    /**
+     * Load plugin text domain
+     */
+    public function loadTextDomain() {
+        load_plugin_textdomain(
+            'control-suite-toolkit-by-kazeem',
+            false,
+            dirname(plugin_basename($this->pluginFile)) . '/languages'
+        );
     }
     
     private function loadDependencies() {
